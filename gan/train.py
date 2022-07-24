@@ -167,12 +167,12 @@ def main():
 
     train_dataset = mri_data.SliceDataset(
         root=pathlib.Path('./data/singlecoil_train/'),
-        transform=UnetDataTransform(which_challenge="singlecoil"),
+        transform=UnetDataTransform(which_challenge="singlecoil", mask_func=mask, use_seed=False),
         challenge='singlecoil'
     )
     val_dataset = mri_data.SliceDataset(
         root=pathlib.Path('./data/singlecoil_val/'),
-        transform=UnetDataTransform(which_challenge="singlecoil"),
+        transform=UnetDataTransform(which_challenge="singlecoil",mask_func=mask),
         challenge='singlecoil'
     )
 
