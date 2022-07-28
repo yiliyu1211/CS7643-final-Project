@@ -92,8 +92,9 @@ def train(device, epoch, data_loader, Generater, Discriminator, Goptimizer, Dopt
         Genloss.backward(retain_graph=True)
         Goptimizer.step()
 
-        Dis_losses.update(Disloss, sampled.shape[0])
-        Gen_losses.update(Genloss, sampled.shape[0])
+        Dis_losses.update(Disloss.detach(), sampled.shape[0])
+        Gen_losses.update(Genloss.detach(), sampled.shape[0])
+        del Disloss, Genloss
 
         iter_time.update(time.time() - start)
         if idx % 10 == 0:
@@ -165,6 +166,7 @@ def main():
 
     coeff_adv, coeff_pw = args.coeff_adv, args.coeff_pw
 
+    print('Loading train and val datasets...')
     train_dataset = mri_data.SliceDataset(
         root=pathlib.Path('./data/singlecoil_train/'),
         transform=UnetDataTransform(which_challenge="singlecoil", mask_func=mask, use_seed=False),
