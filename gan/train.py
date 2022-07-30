@@ -14,6 +14,10 @@ import copy
 from model import *
 from data import *
 
+# MRAugment-specific imports
+from mraugment.data_augment import DataAugmentor
+from mraugment.data_transforms import VarNetDataTransform
+
 parser = argparse.ArgumentParser(description='CS7643 Final Project GAN')
 parser.add_argument('--config', default='config.yaml')
 
@@ -164,17 +168,78 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     coeff_adv, coeff_pw = args.coeff_adv, args.coeff_pw
-
+    
+    # Data augmentation
+    aug_args = {
+        'accelerations': [8],
+        'aug_delay': 0,
+        'aug_exp_decay': 5.0,
+        'aug_interpolation_order': 1,
+        'aug_max_rotation': 180.0,
+        'aug_max_scaling': 0.25,
+        'aug_max_shearing_x': 15.0,
+        'aug_max_shearing_y': 15.0,
+        'aug_max_translation_x': 0.125,
+        'aug_max_translation_y': 0.08,
+        'aug_on': True,
+        'aug_schedule': 'exp',
+        'aug_strength': 0.55,
+        'aug_upsample': True,
+        'aug_upsample_factor': 2,
+        'aug_upsample_order': 1,
+        'aug_weight_fliph': 0.5,
+        'aug_weight_flipv': 0.5,
+        'aug_weight_rot90': 0.5,
+        'aug_weight_rotation': 0.5,
+        'aug_weight_scaling': 1.0,
+        'aug_weight_shearing': 1.0,
+        'aug_weight_translation': 1.0,
+        'batch_size': 1,
+        'center_fractions': [0.04],
+        'challenge': "singlecoil',
+        'chans': 18,
+        'check_val_every_n_epoch': 10,
+        'lr': 0.0003,
+        'lr_gamma': 0.1,
+        'lr_step_size': 500,
+        'mask_type': "random",
+        'max_epochs': 10,
+        'num_cascades': 12,
+        'pools': 4,
+        'resume_from_checkpoint': None,
+        'seed': 42,
+        'train_resolution': [640, 368],
+        'volume_sample_rate': 0.1,
+        'weight_decay': 0.0,
+    }
+    
+    # returns the current epoch for p scheduling
+    current_epoch_fn = lambda: model.current_epoch
+    
+    # initialize data augmentation pipeline
+    augmentor = DataAugmentor(aug_args, current_epoch_fn)
+    
     train_dataset = mri_data.SliceDataset(
         root=pathlib.Path('./data/singlecoil_train/'),
-        transform=UnetDataTransform(which_challenge="singlecoil"),
+        transform=VarNetDataTransform(augmentor=augmentor, use_seed=False),
         challenge='singlecoil'
     )
     val_dataset = mri_data.SliceDataset(
         root=pathlib.Path('./data/singlecoil_val/'),
-        transform=UnetDataTransform(which_challenge="singlecoil"),
+        transform=VarNetDataTransform(augmentor=augmentor, use_seed=False),
         challenge='singlecoil'
     )
+    
+#     train_dataset = mri_data.SliceDataset(
+#         root=pathlib.Path('./data/singlecoil_train/'),
+#         transform=UnetDataTransform(which_challenge="singlecoil"),
+#         challenge='singlecoil'
+#     )
+#     val_dataset = mri_data.SliceDataset(
+#         root=pathlib.Path('./data/singlecoil_val/'),
+#         transform=UnetDataTransform(which_challenge="singlecoil"),
+#         challenge='singlecoil'
+#     )
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True)
