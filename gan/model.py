@@ -109,6 +109,7 @@ class DisConvBlock(nn.Module):
                 nn.LeakyReLU(negative_slope=0.2)
             )
     
+    
     def forward(self, x):
         return self.ConvLayer(x)
 
