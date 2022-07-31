@@ -16,7 +16,7 @@ from data import *
 
 # MRAugment-specific imports
 from mraugment.data_augment import DataAugmentor
-from mraugment.data_transforms import VarNetDataTransform
+from mraugment.data_transforms import UnetDataTransform
 
 parser = argparse.ArgumentParser(description='CS7643 Final Project GAN')
 parser.add_argument('--config', default='config.yaml')
@@ -156,7 +156,7 @@ def validate(device, epoch, data_loader, Generator, Discriminator, criterion1, c
 
 
 def main():
-    global args, coeff_adv, coeff_pw
+    global args, coeff_adv, coeff_pw, epoch
     args = parser.parse_args()
     with open(args.config) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
@@ -194,9 +194,10 @@ def main():
         'aug_weight_scaling': 1.0,
         'aug_weight_shearing': 1.0,
         'aug_weight_translation': 1.0,
+        'max_train_resolution': None,
         'batch_size': 1,
         'center_fractions': [0.04],
-        'challenge': "singlecoil',
+        'challenge': "singlecoil",
         'chans': 18,
         'check_val_every_n_epoch': 10,
         'lr': 0.0003,
@@ -214,19 +215,21 @@ def main():
     }
     
     # returns the current epoch for p scheduling
-    current_epoch_fn = lambda: model.current_epoch
+    current_epoch_fn = lambda: globals()["epoch"]
     
     # initialize data augmentation pipeline
     augmentor = DataAugmentor(aug_args, current_epoch_fn)
     
     train_dataset = mri_data.SliceDataset(
-        root=pathlib.Path('./data/singlecoil_train/'),
-        transform=VarNetDataTransform(augmentor=augmentor, use_seed=False),
+#         root=pathlib.Path('./data/singlecoil_train/'),
+        root=pathlib.Path('/mnt/e/fastMRI/singlecoil_val/'),
+        transform=UnetDataTransform(which_challenge="singlecoil", augmentor=augmentor),
         challenge='singlecoil'
     )
     val_dataset = mri_data.SliceDataset(
-        root=pathlib.Path('./data/singlecoil_val/'),
-        transform=VarNetDataTransform(augmentor=augmentor, use_seed=False),
+#         root=pathlib.Path('./data/singlecoil_val/'),
+        root=pathlib.Path('/mnt/e/fastMRI/singlecoil_val/'),
+        transform=UnetDataTransform(which_challenge="singlecoil", augmentor=augmentor),
         challenge='singlecoil'
     )
     
@@ -262,6 +265,7 @@ def main():
     best_dis_model = None
     best_gen_model = None
     for epoch in range(args.epochs):
+        globals()["epoch"] = epoch
         # adjust_learning_rate(Doptimizer, epoch, args)
         # adjust_learning_rate(Goptimizer, epoch, args)
 
