@@ -37,21 +37,6 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-def adjust_learning_rate(optimizer, epoch, args):
-    epoch += 1
-    if epoch <= args.warmup:
-        lr = args.learning_rate * epoch / args.warmup
-    elif epoch > args.steps[1]:
-        lr = args.learning_rate * 0.01
-    elif epoch > args.steps[0]:
-        lr = args.learning_rate * 0.1
-    else:
-        lr = args.learning_rate
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
-
-
-
 def train(device, epoch, data_loader, Generater, Discriminator, Goptimizer, Doptimizer, criterion1, criterion2):
     """
     criterion1 = BCELoss
@@ -92,8 +77,9 @@ def train(device, epoch, data_loader, Generater, Discriminator, Goptimizer, Dopt
         Genloss.backward(retain_graph=True)
         Goptimizer.step()
 
-        Dis_losses.update(Disloss, sampled.shape[0])
-        Gen_losses.update(Genloss, sampled.shape[0])
+        Dis_losses.update(Disloss.detach(), sampled.shape[0])
+        Gen_losses.update(Genloss.detach(), sampled.shape[0])
+        del Disloss, Genloss
 
         iter_time.update(time.time() - start)
         if idx % 10 == 0:
@@ -165,14 +151,15 @@ def main():
 
     coeff_adv, coeff_pw = args.coeff_adv, args.coeff_pw
 
+    print('Loading train and val datasets...')
     train_dataset = mri_data.SliceDataset(
         root=pathlib.Path('./data/singlecoil_train/'),
-        transform=UnetDataTransform(which_challenge="singlecoil"),
+        transform=UnetDataTransform(which_challenge="singlecoil", mask_func=mask, use_seed=False),
         challenge='singlecoil'
     )
     val_dataset = mri_data.SliceDataset(
         root=pathlib.Path('./data/singlecoil_val/'),
-        transform=UnetDataTransform(which_challenge="singlecoil"),
+        transform=UnetDataTransform(which_challenge="singlecoil",mask_func=mask),
         challenge='singlecoil'
     )
 
