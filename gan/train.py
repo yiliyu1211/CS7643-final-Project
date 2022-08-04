@@ -42,7 +42,7 @@ class AverageMeter(object):
 
 
 
-def train(device, epoch, data_loader, Generater, Discriminator, Goptimizer, Doptimizer, criterion1, criterion2):
+def train(device, epoch, data_loader, Generater_obj, Discriminator_obj, Goptimizer, Doptimizer, criterion1, criterion2):
     """
     criterion1 = BCELoss
     criterion2 = MSELoss
@@ -60,12 +60,12 @@ def train(device, epoch, data_loader, Generater, Discriminator, Goptimizer, Dopt
         sampled = sampled.unsqueeze(0).to(device)
         target = target.unsqueeze(0).to(device)
 
-        fake_img = Generater(sampled).to(device)
+        fake_img = Generater_obj(sampled).to(device)
 
         # train discrimiator
-        d_real_logit = Discriminator(target)
+        d_real_logit = Discriminator_obj(target)
         real_loss = criterion1(d_real_logit, torch.ones(d_real_logit.shape).to(device))  # label 1 as real
-        d_fake_logit = Discriminator(fake_img)
+        d_fake_logit = Discriminator_obj(fake_img)
         fake_loss = criterion1(d_fake_logit, torch.zeros(d_fake_logit.shape).to(device)) # label 0 as fake
 
         Disloss = real_loss + fake_loss
@@ -74,7 +74,7 @@ def train(device, epoch, data_loader, Generater, Discriminator, Goptimizer, Dopt
         Doptimizer.step()
 
         # train generator
-        g_fake_logit = Discriminator(fake_img)
+        g_fake_logit = Discriminator_obj(fake_img)
         gen_adv_loss = criterion1(g_fake_logit, torch.ones(g_fake_logit.shape).to(device))
         gen_pw_loss = criterion2(fake_img, target)  # pixel wise loss
         Genloss = gen_adv_loss * coeff_adv + gen_pw_loss * coeff_pw
@@ -93,7 +93,7 @@ def train(device, epoch, data_loader, Generater, Discriminator, Goptimizer, Dopt
                    'Generator Loss {Gen_losses.val:.4f} ({Gen_losses.avg:.4f})\t')
                   .format(epoch, idx, len(data_loader), iter_time=iter_time, Dis_losses=Dis_losses, Gen_losses=Gen_losses))
 
-def validate(device, epoch, data_loader, Generator, Discriminator, criterion1, criterion2):
+def validate(device, epoch, data_loader, Generator_obj, Discriminator_obj, criterion1, criterion2):
     """
     criterion1 = BCELoss
     criterion2 = MSELoss
@@ -104,8 +104,8 @@ def validate(device, epoch, data_loader, Generator, Discriminator, criterion1, c
     Dis_losses = AverageMeter()
     Gen_losses = AverageMeter()
 
-    Generator.eval()
-    Discriminator.eval()
+    Generator_obj.eval()
+    Discriminator_obj.eval()
 
     for idx, data in enumerate(data_loader):
         start = time.time()
@@ -114,14 +114,14 @@ def validate(device, epoch, data_loader, Generator, Discriminator, criterion1, c
         sampled = sampled.unsqueeze(0).to(device)
         target = target.unsqueeze(0).to(device)
         with torch.no_grad():
-            fake_img = Generater(sampled).to(device)
-            d_real_logit = Discriminator(target)
+            fake_img = Generator_obj(sampled).to(device)
+            d_real_logit = Discriminator_obj(target)
             real_loss = criterion1(d_real_logit, torch.ones(d_real_logit.shape).to(device))
-            d_fake_logit = Discriminator(fake_img)
+            d_fake_logit = Discriminator_obj(fake_img)
             fake_loss = criterion1(d_fake_logit, torch.zeros(d_fake_logit.shape).to(device))
             Disloss = real_loss + fake_loss
 
-            g_fake_logit = Discriminator(fake_img)
+            g_fake_logit = Discriminator_obj(fake_img)
             gen_adv_loss = criterion1(g_fake_logit, torch.ones(g_fake_logit.shape).to(device))
             gen_pw_loss = criterion2(fake_img, target)  # pixel wise loss
             Genloss = gen_adv_loss * coeff_adv + gen_pw_loss * coeff_pw
