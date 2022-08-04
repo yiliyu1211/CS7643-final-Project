@@ -7,7 +7,7 @@ def nmse(pred, y):
     input: y, pred should be in the same shape (any shape should work)
     """
     res = np.linalg.norm(y-pred)**2 / np.linalg.norm(y)**2
-    return res 
+    return np.array(res) 
 
 
 def psnr(pred, y):
