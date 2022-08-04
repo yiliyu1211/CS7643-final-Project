@@ -205,5 +205,7 @@ def main():
         torch.save(best_gen_model.state_dict(), './checkpoints/' + 'generator' + '.pth')
         torch.save(best_dis_model.state_dict(), './checkpoints/' + 'discriminator' + '.pth')
 
+    torch.save(Generater_model.state_dict(), './checkpoints/' + 'final_generator' + '.pth')
+    torch.save(Discriminator_model.state_dict(), './checkpoints/' + 'final_discriminator' + '.pth')
 if __name__ == '__main__':
     main()
