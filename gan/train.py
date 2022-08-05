@@ -246,8 +246,8 @@ def main():
     criterion_bce = nn.BCELoss()
     criterion_mse = nn.MSELoss()
 
-    best_dis_loss = 0.0
-    best_gen_loss = 0.0
+    best_dis_loss = float("Inf")
+    best_gen_loss = float("Inf")
     best_dis_model = None
     best_gen_model = None
     for epoch in range(args.epochs):
@@ -262,7 +262,7 @@ def main():
         dis_loss, gen_loss = validate(device, epoch, val_loader, Generater_model, Discriminator_model, criterion_bce, criterion_mse)
 
         if dis_loss < best_dis_loss:
-            best_dis_loss = best_dis_loss
+            best_dis_loss = dis_loss
             best_dis_model = copy.deepcopy(Discriminator_model)
 
         if gen_loss < best_gen_loss:
@@ -272,6 +272,9 @@ def main():
     if args.save_best:
         torch.save(best_gen_model.state_dict(), './checkpoints/' + 'generator' + '.pth')
         torch.save(best_dis_model.state_dict(), './checkpoints/' + 'discriminator' + '.pth')
+        
+    torch.save(Generater_model.state_dict(), './checkpoints/' + 'final_generator' + '.pth')
+    torch.save(Discriminator_model.state_dict(), './checkpoints/' + 'final_discriminator' + '.pth')
 
 if __name__ == '__main__':
     main()
